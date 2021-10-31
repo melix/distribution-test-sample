@@ -1,0 +1,48 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
+
+    implementation 'com.google.guava:guava:30.1.1-jre'
+}
+
+application {
+    mainClass = 'com.acme.App'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
+
+// Define a new source set for Distribution tests
+sourceSets {
+    distTest
+}
+
+// Those sources will be for tests, so let's make them use test dependencies
+configurations {
+    distTestImplementation.extendsFrom(testImplementation)
+}
+
+// Now let's create a Test task
+def distTest = tasks.register("distTest", Test) {
+    description = "Tests which verify the contents of the distribution"
+    // the test will use the result of the distribution as an input
+    inputs.files(distZip)
+
+    // The test uses the dist test runtime classpath
+    classpath = sourceSets.distTest.runtimeClasspath
+    // And the test classes are those compiled out of distTest source set
+    testClassesDirs = sourceSets.distTest.output
+}
+
+// optional, let's make check lifecycle task depend on distTest
+tasks.named("check") {
+    dependsOn(distTest)
+}
